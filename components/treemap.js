@@ -21,6 +21,7 @@ class Treemap {
         };
 
         this.handlers = {};
+        this.selectedNode = null;
     }
 
     initialize() {
@@ -81,14 +82,14 @@ class Treemap {
         return width;
     }
 
-
     processData() {
         this.root = d3.hierarchy(this.data)
             .sum(d => d.value)
             .sort((a, b) => {
                 if (a.depth === 1 && b.depth === 1) {
                     return a.data.id - b.data.id;
-                } else if (a.depth === 2 && b.depth === 2 && a.parent.data.id === b.parent.data.id) {
+                } 
+                else if (a.depth === 2 && b.depth === 2 && a.parent.data.id === b.parent.data.id) {
                     return b.value - a.value;
                 }
                 return 0;
@@ -104,7 +105,8 @@ class Treemap {
             .data(this.root.leaves())
             .join("g")
             .attr("class", "node")
-            .attr("transform", d => `translate(${d.x0},${d.y0})`);
+            .attr("transform", d => `translate(${d.x0},${d.y0})`)
+            .on('click', (event, d) => this.handleNodeClick(event, d));
 
         this.nodes.append("rect")
             .attr("id", d => `leaf-${uid(d.data.name)}`)
@@ -147,6 +149,35 @@ class Treemap {
         return this.colorScale(ancestor.data.name);
     }
 
+    handleNodeClick(event, d) {
+        const clickedNode = d3.select(event.currentTarget);
+
+        if (this.selectedNode && this.selectedNode.node() === clickedNode.node()) {
+            this.selectedNode.select("rect")
+                .attr("stroke", null)
+                .attr("stroke-width", null);
+            this.selectedNode = null;
+            if (this.handlers['countryClick']) {
+                this.handlers['countryClick'](null);
+            }
+        } 
+        else {
+            if (this.selectedNode) {
+                this.selectedNode.select("rect")
+                    .attr("stroke", null)
+                    .attr("stroke-width", null);
+            }
+            this.selectedNode = clickedNode;
+            this.selectedNode.select("rect")
+                .attr("stroke", "black")
+                .attr("stroke-width", 3);
+    
+            if (this.handlers['countryClick']) {
+                this.handlers['countryClick'](d.data);
+            }
+        }
+    }
+    
     on(eventType, handler) {
         this.handlers[eventType] = handler;
     }

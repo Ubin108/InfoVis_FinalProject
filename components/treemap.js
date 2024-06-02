@@ -106,7 +106,9 @@ class Treemap {
             .join("g")
             .attr("class", "node")
             .attr("transform", d => `translate(${d.x0},${d.y0})`)
-            .on('click', (event, d) => this.handleNodeClick(event, d));
+            .on('click', (event, d) => this.handleNodeClick(event, d))
+            .on('mouseover', (event, d) => this.handleMouseOver(event, d))
+            .on('mouseout', (event, d) => this.handleMouseOut(event, d));
 
         this.nodes.append("rect")
             .attr("id", d => `leaf-${uid(d.data.name)}`)
@@ -148,6 +150,11 @@ class Treemap {
         while (ancestor.depth > 1) ancestor = ancestor.parent;
         return this.colorScale(ancestor.data.name);
     }
+    
+    darkenColor(color) {
+        const darker = d3.color(color).darker(0.5);
+        return darker.toString();
+    }
 
     handleNodeClick(event, d) {
         const clickedNode = d3.select(event.currentTarget);
@@ -177,7 +184,28 @@ class Treemap {
             }
         }
     }
-    
+
+    handleMouseOver(event, d) {
+        d3.select(event.currentTarget).select("rect")
+            .attr("fill", d => this.darkenColor(this.getCountryColor(d)));
+    }
+
+    handleMouseOut(event, d) {
+        const node = d3.select(event.currentTarget);
+        if (this.selectedNode && this.selectedNode.node() === node.node()) {
+            node.select("rect")
+                .attr("stroke", "black")
+                .attr("stroke-width", 3)
+                .attr("fill", d => this.getCountryColor(d));
+        } else {
+            node.select("rect")
+                .attr("stroke", null)
+                .attr("stroke-width", null)
+                .attr("fill", d => this.getCountryColor(d));
+        }
+    }
+
+
     on(eventType, handler) {
         this.handlers[eventType] = handler;
     }

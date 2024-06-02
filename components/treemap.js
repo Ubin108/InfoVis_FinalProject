@@ -22,6 +22,10 @@ class Treemap {
 
         this.handlers = {};
         this.selectedNode = null;
+
+        this.tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
     }
 
     initialize() {
@@ -129,9 +133,6 @@ class Treemap {
             .style("font-size", d => Math.min((d.x1 - d.x0) / 5, (d.y1 - d.y0) / 3))
             .text(d => d.data.name);
 
-        this.nodes.append("title")
-            .text(d => `${d.data.name}: ${d.value}`);
-
         const parents = this.container.selectAll(".parent")
             .data(this.root.descendants().filter(d => d.depth === 1))
             .join("g")
@@ -188,6 +189,12 @@ class Treemap {
     handleMouseOver(event, d) {
         d3.select(event.currentTarget).select("rect")
             .attr("fill", d => this.darkenColor(this.getCountryColor(d)));
+        this.tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        this.tooltip.html(`${d.data.name}: ${d.value}`)
+            .style("left", (event.pageX) + "px")
+            .style("top", (event.pageY - 28) + "px");
     }
 
     handleMouseOut(event, d) {
@@ -203,8 +210,10 @@ class Treemap {
                 .attr("stroke-width", null)
                 .attr("fill", d => this.getCountryColor(d));
         }
+        this.tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
     }
-
 
     on(eventType, handler) {
         this.handlers[eventType] = handler;

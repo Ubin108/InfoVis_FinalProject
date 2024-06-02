@@ -11,7 +11,7 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="components/treemap.js"></script>
     <script src="components/piechart.js"></script>
-    <script src="components/barchart.js"></script>
+    <script src="components/linechart.js"></script>
 
     <title>Airline Visualization</title>
     <style>
@@ -45,6 +45,12 @@
             pointer-events: none;
             opacity: 0;
         }
+
+        .chart-container {
+            display: inline-block;
+            text-align: center;
+            margin-top: 30px;
+        }
     </style>
 </head>
 
@@ -58,19 +64,28 @@
                     </div>
                 </nav>
                 <div class="text-center">
-                    <svg width="200" height="200" id="genderPieChart"></svg>
-                    <svg width="200" height="200" id="agePieChart"></svg>
-                    <svg width="200" height="200" id="statusPieChart"></svg>
+                    <div class="chart-container">
+                        <svg width="200" height="200" id="genderPieChart"></svg>
+                        <div>Gender Distribution</div>
+                    </div>
+                    <div class="chart-container">
+                        <svg width="200" height="200" id="agePieChart"></svg>
+                        <div>Age Distribution</div>
+                    </div>
+                    <div class="chart-container">
+                        <svg width="200" height="200" id="statusPieChart"></svg>
+                        <div>Flight Status</div>
+                    </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <nav class="container navbar navbar-light bg-light">
                     <div class="container-fluid">
-                        <span class="navbar-brand mb-0 h1">Time Series Bar Chart - Number of Flights</span>
+                        <span class="navbar-brand mb-0 h1">Time Series Line Chart - Number of Flights</span>
                     </div>
                 </nav>
                 <div class="text-center">
-                    <svg width="600" height="300" id="barchart"></svg>
+                    <svg width="600" height="300" id="linechart"></svg>
                 </div>
             </div>
         </div>
@@ -90,7 +105,7 @@
     </main>
 
     <script>
-        let data, treemap, genderPieChart, agePieChart, statusPieChart, barChart;
+        let data, treemap, genderPieChart, agePieChart, statusPieChart, lineChart;
         let countryCodeMap = {};
 
         d3.json('https://raw.githubusercontent.com/Ubin108/InfoVis_FinalProject/main/datasets/country_code.json').then(codeData => {
@@ -123,11 +138,6 @@
                                 "name": country,
                                 "value": records.length
                             });
-                        } else {
-                            continent_node.children.push({
-                                "name": "Etc",
-                                "value": records.length
-                            });
                         }
                     }
                 }
@@ -141,7 +151,7 @@
             agePieChart = new PieChart("#agePieChart", 200, 200);
             statusPieChart = new PieChart("#statusPieChart", 200, 200);
 
-            barChart = new BarChart("#barchart", 600, 300);
+            lineChart = new LineChart("#linechart", 600, 300);
 
             const genderData = d3.rollup(csvData, v => v.length, d => d.Gender);
             const ageData = d3.rollup(csvData, v => v.length, d => {
@@ -157,11 +167,11 @@
             const agePieData = Array.from(ageData, ([name, value]) => ({ name, value }));
             const statusPieData = Array.from(statusData, ([name, value]) => ({ name, value }));
 
-            genderPieChart.initialize(genderPieData, "Gender Distribution");
-            agePieChart.initialize(agePieData, "Age Distribution");
-            statusPieChart.initialize(statusPieData, "Flight Status");
+            genderPieChart.initialize(genderPieData);
+            agePieChart.initialize(agePieData);
+            statusPieChart.initialize(statusPieData);
 
-            barChart.initialize(csvData);
+            lineChart.initialize(csvData);
 
             treemap.on('countryClick', countryData => {
                 updateNav(countryData);
@@ -188,7 +198,7 @@
             const genderData = d3.rollup(data, v => v.length, d => d.Gender);
             const ageData = d3.rollup(data, v => v.length, d => {
                 const age = +d.Age;
-                if (age < 20) return "0-19";
+                if (age < 20) return "1-19";
                 else if (age < 40) return "20-39";
                 else if (age < 60) return "40-59";
                 else return "60+";
@@ -199,10 +209,10 @@
             const agePieData = Array.from(ageData, ([name, value]) => ({ name, value }));
             const statusPieData = Array.from(statusData, ([name, value]) => ({ name, value }));
 
-            genderPieChart.update(genderPieData, "Gender Distribution");
-            agePieChart.update(agePieData, "Age Distribution");
-            statusPieChart.update(statusPieData, "Flight Status");
-            barChart.update(data);
+            genderPieChart.update(genderPieData);
+            agePieChart.update(agePieData);
+            statusPieChart.update(statusPieData);
+            lineChart.update(data);
         }
     </script>
 

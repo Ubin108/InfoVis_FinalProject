@@ -129,36 +129,9 @@
         });
     
         d3.csv('https://raw.githubusercontent.com/Ubin108/InfoVis_FinalProject/main/datasets/Airline%20Dataset.csv').then(csvData => {
-            let treemap_data = {
-                "name": "World",
-                "children": [
-                    { "name": "EU", "id": 1, "children": [] },
-                    { "name": "AF", "id": 2, "children": [] },
-                    { "name": "AS", "id": 3, "children": [] },
-                    { "name": "OC", "id": 4, "children": [] },
-                    { "name": "NAM", "id": 5, "children": [] },
-                    { "name": "SAM", "id": 6, "children": [] }
-                ]
-            };
+            data = csvData;
     
-            let grouped = d3.group(csvData, d => d['Arrival Airport Continent'], d => d['Arrival Airport Country']);
-    
-            for (let [continent, countries] of grouped.entries()) {
-                let continent_node = treemap_data.children.find(c => c.name === continent);
-                if (continent_node) {
-                    for (let [country, records] of countries.entries()) {
-                        if (records.length > 100) {
-                            continent_node.children.push({
-                                "name": country,
-                                "value": records.length
-                            });
-                        }
-                    }
-                }
-            }
-            data = treemap_data;
-    
-            treemap = new Treemap("#treemap", data);
+            treemap = new Treemap("#treemap", createTreemapData(csvData));
             treemap.initialize();
     
             genderPieChart = new PieChart("#genderPieChart", 200, 200);
@@ -167,25 +140,7 @@
     
             lineChart = new LineChart("#linechart", 600, 300);
     
-            const genderData = d3.rollup(csvData, v => v.length, d => d.Gender);
-            const ageData = d3.rollup(csvData, v => v.length, d => {
-                const age = +d.Age;
-                if (age < 20) return "1-19";
-                else if (age < 40) return "20-39";
-                else if (age < 60) return "40-59";
-                else return "60+";
-            });
-            const statusData = d3.rollup(csvData, v => v.length, d => d['Flight Status']);
-    
-            const genderPieData = Array.from(genderData, ([name, value]) => ({ name, value }));
-            const agePieData = Array.from(ageData, ([name, value]) => ({ name, value }));
-            const statusPieData = Array.from(statusData, ([name, value]) => ({ name, value }));
-    
-            genderPieChart.initialize(genderPieData);
-            agePieChart.initialize(agePieData);
-            statusPieChart.initialize(statusPieData);
-    
-            lineChart.initialize(csvData);
+            updateCharts(csvData);
     
             treemap.on('countryClick', countryData => {
                 updateNav(countryData);
@@ -200,6 +155,60 @@
             document.getElementById('genderSelect').addEventListener('change', () => updateTreemap(csvData));
             document.getElementById('ageSelect').addEventListener('change', () => updateTreemap(csvData));
         });
+    
+        function createTreemapData(filteredData) {
+            let treemap_data = {
+                "name": "World",
+                "children": [
+                    { "name": "EU", "id": 1, "children": [] },
+                    { "name": "AF", "id": 2, "children": [] },
+                    { "name": "AS", "id": 3, "children": [] },
+                    { "name": "OC", "id": 4, "children": [] },
+                    { "name": "NAM", "id": 5, "children": [] },
+                    { "name": "SAM", "id": 6, "children": [] }
+                ]
+            };
+    
+            let grouped = d3.group(filteredData, d => d['Arrival Airport Continent'], d => d['Arrival Airport Country']);
+    
+            for (let [continent, countries] of grouped.entries()) {
+                let continent_node = treemap_data.children.find(c => c.name === continent);
+                if (continent_node) {
+                    for (let [country, records] of countries.entries()) {
+                        if (records.length > 100) {
+                            continent_node.children.push({
+                                "name": country,
+                                "value": records.length
+                            });
+                        }
+                    }
+                }
+            }
+            return treemap_data;
+        }
+    
+        function filterData(csvData) {
+            const selectedGender = document.getElementById('genderSelect').value;
+            const selectedAge = document.getElementById('ageSelect').value;
+    
+            let filteredData = csvData;
+    
+            if (selectedGender) {
+                filteredData = filteredData.filter(d => d.Gender === selectedGender);
+            }
+    
+            if (selectedAge) {
+                filteredData = filteredData.filter(d => {
+                    const age = +d.Age;
+                    if (selectedAge === "1-19" && age < 20) return true;
+                    if (selectedAge === "20-39" && age >= 20 && age < 40) return true;
+                    if (selectedAge === "40-59" && age >= 40 && age < 60) return true;
+                    if (selectedAge === "60+" && age >= 60) return true;
+                    return false;
+                });
+            }
+            return filteredData;
+        }
     
         function updateNav(countryData) {
             const selectedCountryElement = document.getElementById('selectedCountry');
@@ -233,53 +242,8 @@
         }
     
         function updateTreemap(csvData) {
-            const selectedGender = document.getElementById('genderSelect').value;
-            const selectedAge = document.getElementById('ageSelect').value;
-        
-            let filteredData = csvData;
-        
-            if (selectedGender) {
-                filteredData = filteredData.filter(d => d.Gender === selectedGender);
-            }
-        
-            if (selectedAge) {
-                filteredData = filteredData.filter(d => {
-                    const age = +d.Age;
-                    if (selectedAge === "1-19" && age < 20) return true;
-                    if (selectedAge === "20-39" && age >= 20 && age < 40) return true;
-                    if (selectedAge === "40-59" && age >= 40 && age < 60) return true;
-                    if (selectedAge === "60+" && age >= 60) return true;
-                    return false;
-                });
-            }
-
-            let treemap_data = {
-                "name": "World",
-                "children": [
-                    { "name": "EU", "id": 1, "children": [] },
-                    { "name": "AF", "id": 2, "children": [] },
-                    { "name": "AS", "id": 3, "children": [] },
-                    { "name": "OC", "id": 4, "children": [] },
-                    { "name": "NAM", "id": 5, "children": [] },
-                    { "name": "SAM", "id": 6, "children": [] }
-                ]
-            };
-        
-            let grouped = d3.group(filteredData, d => d['Arrival Airport Continent'], d => d['Arrival Airport Country']);
-        
-            for (let [continent, countries] of grouped.entries()) {
-                let continent_node = treemap_data.children.find(c => c.name === continent);
-                if (continent_node) {
-                    for (let [country, records] of countries.entries()) {
-                        if (records.length > 100) {
-                            continent_node.children.push({
-                                "name": country,
-                                "value": records.length
-                            });
-                        }
-                    }
-                }
-            }
+            const filteredData = filterData(csvData);
+            const treemap_data = createTreemapData(filteredData);
             treemap.selectedNode = null;
             updateCharts(filteredData);
             document.getElementById('selectedCountry').textContent = 'No Country Selected';

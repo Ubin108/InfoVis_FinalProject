@@ -42,7 +42,7 @@ class Treemap {
             .attr("height", this.height + this.margin.top + this.margin.bottom);
 
         this.container.attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
-        
+
         this.addLegend();
         this.processData();
         this.update();
@@ -92,8 +92,7 @@ class Treemap {
             .sort((a, b) => {
                 if (a.depth === 1 && b.depth === 1) {
                     return a.data.id - b.data.id;
-                } 
-                else if (a.depth === 2 && b.depth === 2 && a.parent.data.id === b.parent.data.id) {
+                } else if (a.depth === 2 && b.depth === 2 && a.parent.data.id === b.parent.data.id) {
                     return b.value - a.value;
                 }
                 return 0;
@@ -104,28 +103,30 @@ class Treemap {
 
     update() {
         const uid = (name) => name.replace(/\s+/g, '-').toLowerCase();
+        this.container.selectAll(".node").remove();
+        this.container.selectAll(".parent").remove();
 
-        this.nodes = this.container.selectAll(".node")
+        const nodes = this.container.selectAll(".node")
             .data(this.root.leaves())
-            .join("g")
+            .enter().append("g")
             .attr("class", "node")
             .attr("transform", d => `translate(${d.x0},${d.y0})`)
             .on('click', (event, d) => this.handleNodeClick(event, d))
             .on('mouseover', (event, d) => this.handleMouseOver(event, d))
             .on('mouseout', (event, d) => this.handleMouseOut(event, d));
 
-        this.nodes.append("rect")
+        nodes.append("rect")
             .attr("id", d => `leaf-${uid(d.data.name)}`)
             .attr("width", d => d.x1 - d.x0)
             .attr("height", d => d.y1 - d.y0)
             .attr("fill", d => this.getCountryColor(d));
 
-        this.nodes.append("clipPath")
+        nodes.append("clipPath")
             .attr("id", d => `clip-${uid(d.data.name)}`)
             .append("use")
             .attr("xlink:href", d => `#leaf-${uid(d.data.name)}`);
 
-        this.nodes.append("text")
+        nodes.append("text")
             .attr("clip-path", d => `url(#clip-${uid(d.data.name)})`)
             .attr("x", d => (d.x1 - d.x0) / 2)
             .attr("y", d => (d.y1 - d.y0) / 2)
@@ -135,7 +136,7 @@ class Treemap {
 
         const parents = this.container.selectAll(".parent")
             .data(this.root.descendants().filter(d => d.depth === 1))
-            .join("g")
+            .enter().append("g")
             .attr("class", "parent");
 
         parents.append("rect")
@@ -213,6 +214,12 @@ class Treemap {
         this.tooltip.transition()
             .duration(500)
             .style("opacity", 0);
+    }
+
+    updateData(newData) {
+        this.data = newData;
+        this.processData();
+        this.update();
     }
 
     on(eventType, handler) {
